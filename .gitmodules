@@ -1,3 +1,10 @@
 [submodule "Visual"]
 	path = Visual
 	url = https://github.com/tortikmam/Visual.git
+[submodule "third_party/implot"]
+	path = third_party/implot
+	url = https://github.com/epezent/implot.git
+[submodule "third_party/imgui"]
+	path = third_party/imgui
+	url = https://github.com/ocornut/imgui.git
+	branch = docking
