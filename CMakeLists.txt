@@ -33,6 +33,14 @@ if(NOT EXISTS "${THIRD_PARTY_DIR}/stb/stb_image.h")
     )
 endif()
 
+if(NOT EXISTS "${THIRD_PARTY_DIR}/stb/stb_image_write.h")
+    file(DOWNLOAD 
+        "https://raw.githubusercontent.com/nothings/stb/master/stb_image_write.h"
+        "${THIRD_PARTY_DIR}/stb/stb_image_write.h"
+        SHOW_PROGRESS
+    )
+endif()
+
 add_library(imgui STATIC
     ${THIRD_PARTY_DIR}/imgui/imgui.cpp
     ${THIRD_PARTY_DIR}/imgui/imgui_draw.cpp
@@ -64,6 +72,8 @@ add_executable(telemetry_monitor
     ${SRC_DIR}/parsers.cpp
     ${SRC_DIR}/backend.cpp
     ${SRC_DIR}/gui.cpp
+    ${SRC_DIR}/heatmap.cpp
+    ${SRC_DIR}/idw_heatmap.cpp
 )
 
 target_include_directories(telemetry_monitor PRIVATE 

@@ -10,17 +10,41 @@ using json = nlohmann::json;
 
 void save_to_json(const string& raw_msg, float lat, float lon, int dbm, int rsrq, int rssi) {
     json entry;
-    
+
     auto now = chrono::system_clock::now();
     auto in_time_t = chrono::system_clock::to_time_t(now);
-    
-    entry["timestamp"] = in_time_t;
-    entry["lat"] = lat;
-    entry["lon"] = lon;
-    entry["rsrp"] = dbm;
-    entry["rsrq"] = rsrq;
-    entry["rssi"] = rssi;
-    entry["raw_data"] = raw_msg;
+
+    // Формат как в твоем логе
+    entry["accuracy"] = 1.0;
+    entry["latitude"] = lat;
+    entry["longitude"] = lon;
+    entry["provider"] = "gps";
+    entry["recordedTime"] = chrono::duration_cast<chrono::milliseconds>(now.time_since_epoch()).count();
+    entry["source"] = "source";
+    entry["timestamp"] = chrono::duration_cast<chrono::milliseconds>(now.time_since_epoch()).count();
+
+    // Telephony структура
+    json telephony;
+    json lte;
+    json identity;
+    identity["band"] = 3;
+    identity["ci"] = 0;
+    identity["earfcn"] = 0;
+    identity["mcc"] = "250";
+    identity["mnc"] = "01";
+    identity["pci"] = 0;
+    identity["tac"] = 0;
+
+    json signal;
+    signal["asu"] = 28;
+    signal["rsrp"] = dbm;
+    signal["rsrq"] = rsrq;
+    signal["rssnr"] = 0;
+
+    lte["identity"] = identity;
+    lte["signal"] = signal;
+    telephony["LTE"] = lte;
+    entry["telephony"] = telephony;
 
     ofstream file("telemetry_log.json", ios::app);
     if (file.is_open()) {
@@ -42,7 +66,7 @@ void backend() {
     while (should_run) {
         zmq::message_t request;
         auto res = socket.recv(request, zmq::recv_flags::none);
-        
+
         if (res) {
             if (!allow_receiving) {
                 string reply_str = "DISABLED";
@@ -89,7 +113,12 @@ void backend() {
                     g_data.x_time.erase(g_data.x_time.begin());
                     g_data.y_dbm.erase(g_data.y_dbm.begin());
                 }
+
+                // Сохраняем в JSON и добавляем точку на тепловую карту
                 save_to_json(msg_str, lat, lon, current_dbm, g_data.rsrq, g_data.rssi);
+
+                auto now_ms = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count();
+                AddHeatmapPoint(lat, lon, current_dbm, (double)now_ms);
             }
 
             string reply_str = "OK";

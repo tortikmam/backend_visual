@@ -5,6 +5,15 @@
 #include <mutex>
 #include <chrono>
 #include <atomic>
+#include <map>
+
+// Критерии для тепловой карты
+enum class HeatmapCriterion {
+    RSRP,
+    RSRQ,
+    RSSI,
+    ALTITUDE
+};
 
 // Структура данных телеметрии
 struct TelemetryData {
@@ -34,6 +43,35 @@ int parse_rssi(const std::string& text);
 
 // Функция сохранения в JSON
 void save_to_json(const std::string& raw_msg, float lat, float lon, int dbm, int rsrq, int rssi);
+
+// Legacy тепловая карта (точки)
+void LoadHeatmapFromLog();
+void AddHeatmapPoint(double lat, double lon, int rsrp, double timestamp);
+void DrawHeatmapOverlay();
+void DrawHeatmapLegend();
+
+// ========== IDW ТЕПЛОВАЯ КАРТА ==========
+
+// Запуск/остановка рабочего потока
+void StartHeatmapWorker();
+void StopHeatmapWorker();
+
+// Запросить пересчет
+void RequestHeatmapUpdate();
+bool IsHeatmapReady();
+
+// Настройки
+void SetHeatmapCriterion(HeatmapCriterion c);
+HeatmapCriterion GetHeatmapCriterion();
+void SetHeatmapRadius(double meters);
+double GetHeatmapRadius();
+void SetSelectedEarfcn(int earfcn);
+int GetSelectedEarfcn();
+std::vector<int> GetAvailableEarfcns();
+
+// Отрисовка
+void DrawIDWHeatmap();
+void DrawIDWHeatmapLegend();
 
 // Основные функции потоков
 void backend();

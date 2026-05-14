@@ -104,6 +104,11 @@ void run_gui() {
 
     bool running = true;
     bool show_map = true;
+    bool show_idw_heatmap = true;
+    bool show_legacy_points = false;
+    
+    // Запускаем IDW рабочий поток
+    StartHeatmapWorker();
     
     while (running) {
         SDL_Event event;
@@ -123,6 +128,58 @@ void run_gui() {
         ImGui::Begin("Settings");
         ImGui::Checkbox("Allow data reception?", &allow_receiving);
         ImGui::Checkbox("Show Map", &show_map);
+        ImGui::Checkbox("Show IDW Heatmap", &show_idw_heatmap);
+        ImGui::Checkbox("Show Legacy Points", &show_legacy_points);
+
+        ImGui::Separator();
+        ImGui::Text("IDW Heatmap Settings");
+
+        static int criterion_idx = 0;
+        const char* criteria[] = {"RSRP", "RSRQ", "RSSI", "Altitude"};
+        if (ImGui::Combo("Criterion", &criterion_idx, criteria, IM_ARRAYSIZE(criteria))) {
+            SetHeatmapCriterion((HeatmapCriterion)criterion_idx);
+        }
+
+        static float radius = 25.0f;
+        if (ImGui::SliderFloat("Radius (m)", &radius, 10.0f, 40.0f)) {
+            SetHeatmapRadius(radius);
+        }
+
+        // EARFCN selector
+        auto earfcns = GetAvailableEarfcns();
+        static int earfcn_idx = 0;
+        std::string earfcn_label = "All";
+        if (!earfcns.empty()) {
+            if (earfcn_idx == 0) {
+                earfcn_label = "All";
+            } else if (earfcn_idx - 1 < (int)earfcns.size()) {
+                earfcn_label = std::to_string(earfcns[earfcn_idx - 1]);
+            }
+        }
+
+        if (ImGui::BeginCombo("EARFCN", earfcn_label.c_str())) {
+            if (ImGui::Selectable("All", earfcn_idx == 0)) {
+                earfcn_idx = 0;
+                SetSelectedEarfcn(-1);
+            }
+            for (size_t i = 0; i < earfcns.size(); i++) {
+                bool selected = (earfcn_idx == (int)(i + 1));
+                if (ImGui::Selectable(std::to_string(earfcns[i]).c_str(), selected)) {
+                    earfcn_idx = (int)(i + 1);
+                    SetSelectedEarfcn(earfcns[i]);
+                }
+            }
+            ImGui::EndCombo();
+        }
+
+        if (ImGui::Button("Recalculate Heatmap")) {
+            RequestHeatmapUpdate();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Reload Data")) {
+            LoadHeatmapFromLog();
+            RequestHeatmapUpdate();
+        }
         ImGui::End();
 
         ImGui::Begin("Device Data");
@@ -280,6 +337,7 @@ void run_gui() {
     }
     tile_cache.clear();
 
+    StopHeatmapWorker();
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL2_Shutdown();
     ImPlot::DestroyContext();
