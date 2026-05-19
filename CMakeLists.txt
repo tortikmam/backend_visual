@@ -12,6 +12,10 @@ find_package(OpenGL REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(Threads REQUIRED)
 find_package(CURL REQUIRED)
+find_package(PkgConfig REQUIRED)
+
+# pqxx через pkg-config
+pkg_check_modules(PQXX REQUIRED libpqxx)
 
 find_package(cpr CONFIG)
 if(NOT cpr_FOUND)
@@ -72,14 +76,16 @@ add_executable(telemetry_monitor
     ${SRC_DIR}/parsers.cpp
     ${SRC_DIR}/backend.cpp
     ${SRC_DIR}/gui.cpp
-    ${SRC_DIR}/heatmap.cpp
-    ${SRC_DIR}/idw_heatmap.cpp
+    ${SRC_DIR}/db.cpp
 )
 
 target_include_directories(telemetry_monitor PRIVATE 
     ${SRC_DIR}
     ${THIRD_PARTY_DIR}/stb
+    ${PQXX_INCLUDE_DIRS}
 )
+
+target_compile_options(telemetry_monitor PRIVATE ${PQXX_CFLAGS_OTHER})
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.0)
     target_link_libraries(telemetry_monitor PRIVATE stdc++fs)
@@ -94,6 +100,7 @@ target_link_libraries(telemetry_monitor PRIVATE
     ${GLEW_LIBRARIES} 
     Threads::Threads
     ${CURL_LIBRARIES}
+    ${PQXX_LIBRARIES}
     dl
 )
 

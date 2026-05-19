@@ -10,11 +10,11 @@ TelemetryData::TelemetryData() {
 }
 
 int main(int argc, char *argv[]) {
-    std::thread back_thread(backend);
-    run_gui();
+    init_database();
 
-    if (back_thread.joinable()) {
-        back_thread.join();
-    }
+    std::thread back_thread(backend);
+    back_thread.detach();
+
+    run_gui();
     return 0;
 }
