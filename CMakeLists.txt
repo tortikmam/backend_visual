@@ -70,13 +70,13 @@ target_include_directories(implot PUBLIC ${THIRD_PARTY_DIR}/implot)
 target_link_libraries(implot PRIVATE imgui)
 target_compile_options(implot PRIVATE -fPIC)
 
-
 add_executable(telemetry_monitor 
     ${SRC_DIR}/main.cpp
     ${SRC_DIR}/parsers.cpp
     ${SRC_DIR}/backend.cpp
     ${SRC_DIR}/gui.cpp
     ${SRC_DIR}/db.cpp
+    ${SRC_DIR}/heatmap.cpp
 )
 
 target_include_directories(telemetry_monitor PRIVATE 
